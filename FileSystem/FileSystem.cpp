@@ -4,9 +4,16 @@
 #include "pch.h"
 #include <iostream>
 
+/*
+struct alllocationTable
+{
+	short int tableInfo[4096]; 
+};
+*/ 
+
 int main()
 {
-//usefull code here		
+
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
