@@ -2,6 +2,7 @@
 //
 
 #include "pch.h"
+#include "fileSys.h"
 #include <iostream>
 
 /*
