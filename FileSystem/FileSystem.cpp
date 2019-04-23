@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "fileSys.h"
 #include <iostream>
+#include <string>
 
 /*
 struct alllocationTable
@@ -12,9 +13,18 @@ struct alllocationTable
 };
 */ 
 
-int main()
+int main(int argc, char* argv[])
 {
+	fileSys fileSystem; 
 
+	std::cout << "Input command...\n"; 
+	std::string command; 
+	std::cin >> command; 
+
+	if (command.compare("Write") == 0)
+	{
+		fileSystem.writeBlank(); 
+	}
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
