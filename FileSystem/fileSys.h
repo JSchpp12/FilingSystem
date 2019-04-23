@@ -1,4 +1,11 @@
 #pragma once
+#include "fileSys.h"
+
+#include <fstream>
+#include <iostream>
+#include <string>
+
+
 class fileSys
 {
 	struct allocationTable
@@ -26,6 +33,17 @@ class fileSys
 
 		directoryEntry* nextEntry = nullptr; //for creating the directory structure
 	};
+
+ 
+	std::string diskPath = "DiskPath.txt"; //name for disk storage
+	bool diskStatus = false; //set to false if the diskfile does not exsist on disk
+
+	int numDirectoryEntry = 0; //number of entries in the directory 
+	allocationTable* currAllocationTable; 
+	drive *currDrive; 
+
+	int numBlocksDirectory = 0; //number of blocks the directory table will take up 
+
 public:
 	fileSys();
 	~fileSys();
@@ -33,5 +51,8 @@ public:
 
 private: 
 	void readFileSys(); 
+	void populateDirectory();
+	void initilizeEmptyDisk(); 
+	bool initilizeDiskFromStorage(std::string fileName);
 };
 
