@@ -8,7 +8,7 @@
 fileSys::fileSys()
 {
 	//diskPath = "DiskFile.txt"; 
-	fileIO.open(diskPath, std::ios::binary);
+	fileIO.open(diskPath, std::ios::binary | std::ios::in | std::ios::out);
 
 	if (fileIO.fail() == true)
 		diskStatus = false;
@@ -20,9 +20,9 @@ fileSys::fileSys()
 	Drive = new drive;
 
 	if (diskStatus == false)
-	{
-		initilizeEmptyDisk(); 
-	}
+		initilizeEmptyDisk();
+	else
+		initilizeDiskFromStorage(diskPath); 
 }
 
 
@@ -66,7 +66,7 @@ void fileSys::initilizeEmptyDisk()
 	allTable->tableInfo[1] = -1; 
 
 	allTableCount = allTableCount + 2; 
-	for (int i = 2554554; i < 4096; i++)
+	for (int i = 2; i < 4096; i++)
 	{
 		allTable->tableInfo[i] = -9; //set vals in allocationTable to 'empty' 
 	}
@@ -88,6 +88,7 @@ bool fileSys::initilizeDiskFromStorage(std::string fileName)
 	for (int j = 0; j < 4096; j++)
 	{
 		//read in the allocation table first 
+		/*
 		char currentByte = readCharFromFile();
 		if (fileIO.eof() == true)
 		{
@@ -97,9 +98,18 @@ bool fileSys::initilizeDiskFromStorage(std::string fileName)
 		}
 		//store char into storage
 		buildBlocks(currentByte); 
+		*/ 
+		short int allInfo; 
+		fileIO >> allInfo; 
 
-		std::bitset<8> storage(currentByte);
+		//add the int to the all table 
+		allTable->tableInfo[allTableCount] = allInfo; 
+		allTableCount++; 
 
+		//std::bitset<16> storage(currentByte);
+		
+
+		/*
 		for (int i = 7; i >= 0; i--)
 		{
 			if (storage.test(i) == true)
@@ -111,6 +121,7 @@ bool fileSys::initilizeDiskFromStorage(std::string fileName)
 				addBinaryShort(false);
 			}
 		}
+		*/ 
 	}
 	if ((reachedEnd == true) && (allTableCount < 4096))
 	{
@@ -150,6 +161,58 @@ void fileSys::buildBlocks(char newBlockPiece)
 	}
 }
 
+//called to insert a file into the file system
+bool fileSys::insertFile(std::string newFilePath)
+{
+	int targetBlock, file_size, free_space; 
+	std::ifstream newFileReader;
+	newFileReader.open(newFilePath, std::ios::ate | std::ios::binary);
+
+	//check if file is open
+	if (newFileReader.is_open() == false)
+	{
+		std::cout << "Filed to open the file\n";
+		return false; //failed to open file 
+	}
+
+	//check if there is room for the file 
+	file_size = newFileReader.tellg(); //number of bytes in file 
+	newFileReader.seekg(0, std::ios::beg); //move file reader back to beginning of file 
+
+	
+
+	
+
+
+
+	//find empty block
+	//insert directory entry
+	//start inserting data into blocks and update file allocation table as needed 
+}
+
+//returns index of empty block based on file allocation table data 
+int fileSys::findEmptyBlock()
+{
+	for (int i = 0; i < 4096; i++)
+	{
+		if (allTable->tableInfo[i] = -9)
+			//this block is empty 
+			return i; 
+	}
+}
+
+//returns number of free blocks based on file allocation table data
+int fileSys::getNumOfFreeBlocks()
+{
+	int numFree = 0; 
+	for (int i = 0; i < 4096; i++)
+	{
+		if (allTable->tableInfo[i] = -9)
+			numFree++; 
+	}
+	return numFree; 
+}
+
 char fileSys::readCharFromFile()
 {
 	char storage; 
@@ -165,10 +228,14 @@ char fileSys::readCharFromFile()
 //write virtual disk to file 
 void fileSys::writeToFile()
 {
+	if (fileIO.is_open() == false)
+	{
+		fileIO.open(diskPath, std::ios::out | std::ios::binary); 
+	}
 	fileIO.seekp(std::ios::beg);
 
 	//write the file allocation table
-	for (int i = 0; i < 4000; i++)
+	for (int i = 0; i < 4096; i++)
 	{
 		fileIO << allTable->tableInfo[i]; 
 	}

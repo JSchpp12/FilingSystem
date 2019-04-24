@@ -70,7 +70,10 @@ private:
 	bool initilizeDiskFromStorage(std::string fileName);
 	void addBinaryShort(bool newVal); 
 	void buildBlocks(char newBlockPiece);
-	char readCharFromFile(); 
+	bool insertFile(std::string newFilePath);
+	int findEmptyBlock();
+	int getNumOfFreeBlocks();
+	char readCharFromFile();  
 	void writeToFile(); 
 };
 
