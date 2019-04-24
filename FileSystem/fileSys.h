@@ -21,7 +21,10 @@ class fileSys
 	struct drive
 	{
 		//4096 blocks 
-		block data[4096]; 
+		//block data[4096];
+
+		//change this to 4094 blocks since the first two will just be the allocation table
+		block data[4094]; 
 	};
 	struct directoryEntry
 	{
