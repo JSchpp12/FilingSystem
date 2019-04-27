@@ -31,7 +31,7 @@ class fileSys
 		//32 bytes to hold filename 
 		//short int indicating starting block number for the file 
 		//int to indicate number of bytes in the file 
-		unsigned char fileName_storage[32]; 
+		char fileName_storage[32]; 
 		short int firstblockNum = -1; 
 		int fileSize = 0; //size in bytes
 
@@ -40,6 +40,9 @@ class fileSys
  
 	directoryEntry* firstEntry = nullptr; //store the first entry in the file
 	directoryEntry* lastEntry = nullptr; 
+
+	int directoryTableFirst = -9; 
+	int numDirectoryBlocks = 0; 
 
 	std::fstream fileIO; 
 	std::string diskPath = "Disk.txt"; //name for disk storage
@@ -65,6 +68,7 @@ public:
 	~fileSys();
 	void listFileNames();
 	void writeShort(short int newInt); 
+	void readInFile(std::string newFilePath); 
 	void writeBlank(); 
 private: 
 	void readFileSys(); 
@@ -74,7 +78,9 @@ private:
 	void addBinaryShort(bool newVal); 
 	void buildBlocks(char newBlockPiece);
 	bool insertFile(std::string newFilePath);
-	int findEmptyBlock();
+	void insertBlock(block* newBlock); 
+	void buildDirectoryEntry(std::string newFilePath, int fileSize, int startingBlock); 
+	short int findEmptyBlock();
 	int getNumOfFreeBlocks();
 	char readCharFromFile();  
 	void writeToFile(); 

@@ -50,6 +50,12 @@ void fileSys::writeShort(short int newInt)
 {
 
 }
+
+void fileSys::readInFile(std::string newFilePath)
+{
+	bool success; 
+	success = insertFile(newFilePath); 
+}
 #pragma endregion
 
 #pragma region Private Methods
@@ -104,10 +110,9 @@ bool fileSys::initilizeDiskFromStorage(std::string fileName)
 
 		//add the int to the all table 
 		allTable->tableInfo[allTableCount] = allInfo; 
-		allTableCount++; 
+		allTableCount++;
 
 		//std::bitset<16> storage(currentByte);
-		
 
 		/*
 		for (int i = 7; i >= 0; i--)
@@ -164,7 +169,9 @@ void fileSys::buildBlocks(char newBlockPiece)
 //called to insert a file into the file system
 bool fileSys::insertFile(std::string newFilePath)
 {
-	int targetBlock, file_size, free_space; 
+	int file_size, free_space, firstBlock; 
+	short int targetBlock, previousBlock; 
+	int num_blocksNeed = 0;
 	std::ifstream newFileReader;
 	newFileReader.open(newFilePath, std::ios::ate | std::ios::binary);
 
@@ -177,25 +184,121 @@ bool fileSys::insertFile(std::string newFilePath)
 
 	//check if there is room for the file 
 	file_size = newFileReader.tellg(); //number of bytes in file 
+	num_blocksNeed = (file_size / 4000);
+	if ((file_size % 4000) > 0)
+		num_blocksNeed++;
+
+	std::cout << "Number of blocks needed " << num_blocksNeed << "\n";
 	newFileReader.seekg(0, std::ios::beg); //move file reader back to beginning of file 
 
-	
+	//build new directory entry for the file 
+	targetBlock = findEmptyBlock;
+	buildDirectoryEntry(newFilePath, file_size, targetBlock); 
 
-	
+	//read in the blocks that are needed 
+	for (int i = 0; i < num_blocksNeed; i++)
+	{
+		targetBlock = findEmptyBlock();
+		block* newBlock = new block;
+
+		if (i == 0)
+			firstBlock = targetBlock;
+		else
+		{
+			//update file allocation table 
+			allTable->tableInfo[previousBlock] = targetBlock; 
+		}
+
+		//read the file into the new block structure 
+		for (int k = 0; k < 4000; k++)
+		{
+			char* tempStorage = new char;
+			newFileReader >> tempStorage;
+
+			//check if hit end of file 
+			if (newFileReader.eof() == true)
+				break;
+			newFileReader >> Drive->data[targetBlock].block_storage[k];
 
 
-
-	//find empty block
+		}
+		previousBlock = firstBlock;
+	}
 	//insert directory entry
 	//start inserting data into blocks and update file allocation table as needed 
 }
 
+//builds a directory entry for the new file being inserted 
+void fileSys::buildDirectoryEntry(std::string newFileName, int fileSize, int startingBlock)
+{
+	//check if the directory table is empty 
+	if (directoryTableFirst == -9)
+	{
+		//build directory table 
+		short int directoryTableTarget = findEmptyBlock();
+		directoryTableFirst = directoryTableTarget;
+
+		//update FAT table
+		allTable->tableInfo[directoryTableTarget] = -1; //mark this as eof since the directory will only take up one block at start
+	}
+
+	//build the entry and add it to the chain 
+	directoryEntry newEntry;
+	strcpy(newEntry.fileName_storage, newFileName.c_str());
+
+	newEntry.fileSize = fileSize;
+	newEntry.firstblockNum = startingBlock;
+
+	//add new block to the chain
+	if (firstEntry == nullptr)
+	{
+		firstEntry = &newEntry;
+		lastEntry = &newEntry;
+	}
+	else
+	{
+		lastEntry->nextEntry = &newEntry;
+		lastEntry = &newEntry;
+	}
+
+	//check how much space the chain will take up and see if a new block is needed 
+	directoryEntry* entryScanner = firstEntry;
+	int numEntries = 1;
+	while (entryScanner->nextEntry != nullptr)
+	{
+		entryScanner = entryScanner->nextEntry;
+		numEntries++;
+	}
+
+	if (allTable->tableInfo[2] == -9)
+	{
+		allTable->tableInfo[2] = -1;
+	}
+
+	int sizeofDirectory = (sizeof(directoryEntry) - sizeof(entryScanner->nextEntry)) * numEntries; //calc size of current directory ---- MIGHT BE WRONG SINCE THERE IS A POINTER IN THE STRUCTURE
+	if (sizeofDirectory > (sizeof(block) * numBlocksDirectory))
+	{
+		short int targetBlock = findEmptyBlock(); //find next block for FAT
+
+		//size has exceeded blocks allocated for the table -- allocate another block for the table 
+		//follow the chain of the FAT table (will always start on the 3rd block of the filesystem 
+		short int nextBlock; 
+		nextBlock = allTable->tableInfo[2]; 
+		do
+		{
+			nextBlock = allTable->tableInfo[nextBlock]; 
+		} while (nextBlock != -1); 
+
+		allTable->tableInfo[nextBlock] = targetBlock; //set next block in the chain 
+	}
+}
+
 //returns index of empty block based on file allocation table data 
-int fileSys::findEmptyBlock()
+short int fileSys::findEmptyBlock()
 {
 	for (int i = 0; i < 4096; i++)
 	{
-		if (allTable->tableInfo[i] = -9)
+		if (allTable->tableInfo[i] == -9)
 			//this block is empty 
 			return i; 
 	}

@@ -3,8 +3,10 @@
 
 #include "pch.h"
 #include "fileSys.h"
+#include "PoemName.h"
 #include <iostream>
 #include <string>
+
 
 /*
 struct alllocationTable
@@ -18,12 +20,19 @@ int main(int argc, char* argv[])
 	fileSys fileSystem; 
 
 	std::cout << "Input command...\n"; 
-	std::string command; 
+	std::string command, newFilePath; 
 	std::cin >> command; 
 
 	if (command.compare("Write") == 0)
 	{
 		fileSystem.writeBlank(); 
+	}
+	if (command.compare("Read") == 0)
+	{
+		std::cout << "Input file path...\n"; 
+		std::cin >> newFilePath;
+		fileSystem.readInFile(newFilePath); 
+
 	}
 }
 
