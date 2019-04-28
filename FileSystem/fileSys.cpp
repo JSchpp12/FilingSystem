@@ -192,7 +192,7 @@ bool fileSys::insertFile(std::string newFilePath)
 	newFileReader.seekg(0, std::ios::beg); //move file reader back to beginning of file 
 
 	//build new directory entry for the file 
-	targetBlock = findEmptyBlock;
+	targetBlock = findEmptyBlock();
 	buildDirectoryEntry(newFilePath, file_size, targetBlock); 
 
 	//read in the blocks that are needed 
@@ -244,7 +244,7 @@ void fileSys::buildDirectoryEntry(std::string newFileName, int fileSize, int sta
 
 	//build the entry and add it to the chain 
 	directoryEntry newEntry;
-	strcpy(newEntry.fileName_storage, newFileName.c_str());
+	strcpy_s(newEntry.fileName_storage, newFileName.c_str());
 
 	newEntry.fileSize = fileSize;
 	newEntry.firstblockNum = startingBlock;

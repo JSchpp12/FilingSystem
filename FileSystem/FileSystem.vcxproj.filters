@@ -24,9 +24,6 @@
     <ClInclude Include="fileSys.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PoemName.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -39,9 +36,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="fileSys.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PoemName.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
