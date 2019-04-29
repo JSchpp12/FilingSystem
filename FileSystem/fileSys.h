@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 #include <bitset>
-
+#include <map>
 
 class fileSys
 {
@@ -32,17 +32,18 @@ class fileSys
 		//short int indicating starting block number for the file 
 		//int to indicate number of bytes in the file 
 		char fileName_storage[32]; 
-		short int firstblockNum = -1; 
-		int fileSize = 0; //size in bytes
+		short int firstblockNum; 
+		int fileSize; //size in bytes
 
 		directoryEntry* nextEntry = nullptr; //for creating the directory structure
 	};
  
-	directoryEntry* firstEntry = nullptr; //store the first entry in the file
+	bool firstEntryExsist = false; 
+	directoryEntry firstEntry; //store the first entry in the file
 	directoryEntry* lastEntry = nullptr; 
 
-	int directoryTableFirst = -9; 
-	int numDirectoryBlocks = 0; 
+	int directoryTableFirst = 2; 
+	int numBlocksDirectory = 1; //number of blocks the directory table will take up 
 
 	std::fstream fileIO; 
 	std::string diskPath = "Disk.txt"; //name for disk storage
@@ -51,8 +52,6 @@ class fileSys
 	int numDirectoryEntry = 0; //number of entries in the directory 
 	allocationTable* allTable; 
 	drive* Drive; 
-
-	int numBlocksDirectory = 0; //number of blocks the directory table will take up 
 
 	std::bitset<16> shortIntBuilder; 
 	int allTableCount = 0; 
@@ -68,21 +67,25 @@ public:
 	~fileSys();
 	void listFileNames();
 	void writeShort(short int newInt); 
-	void readInFile(std::string newFilePath); 
+	void readInFile(std::string newFileName, std::string poemContents); 
+	void readFile(std::string targetFile);
 	void writeBlank(); 
 private: 
 	void readFileSys(); 
 	void populateDirectory();
 	void initilizeEmptyDisk(); 
+	void buildDirectoryTable(); 
 	bool initilizeDiskFromStorage(std::string fileName);
 	void addBinaryShort(bool newVal); 
 	void buildBlocks(char newBlockPiece);
-	bool insertFile(std::string newFilePath);
+	bool insertFile(std::string poemName, std::string poemContents);
+	bool insertFileFromExsistingFile(std::string fileName);
 	void insertBlock(block* newBlock); 
 	void buildDirectoryEntry(std::string newFilePath, int fileSize, int startingBlock); 
 	short int findEmptyBlock();
 	int getNumOfFreeBlocks();
 	char readCharFromFile();  
 	void writeToFile(); 
+	bool compStringChar(std::string string, char character[]); 
 };
 

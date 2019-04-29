@@ -9,7 +9,6 @@
 
 using namespace std; 
 
-
 map<string, string> initializePoetry() {
 	map<string, string> poems;
 	poems["Jaberwocky"] = "'Twas brillig, and the slithy toves \nDid gyre and gimble in the wabe :\nAll mimsy were the borogoves,\nAnd the mome raths outgrabe.\n\n"
@@ -87,22 +86,54 @@ int main(int argc, char* argv[])
 	map<string, string> poetry = initializePoetry();
 
 	std::cout << "Input command...\n"; 
-	std::string command, newFilePath; 
+	std::string command, newFilePath, poemName, poemContents; 
 	std::cin >> command; 
 
-	if (command.compare("Write") == 0)
+	while (command.compare("Quit") != 0)
 	{
-		fileSystem.writeBlank(); 
-	}
-	else if (command.compare("Read") == 0)
-	{
-		std::cout << "Input file path...\n"; 
-		std::cin >> newFilePath;
-		fileSystem.readInFile(newFilePath); 
+		if (command.compare("Write") == 0)
+		{
+			//fileSystem.writeBlank(); 
+			std::cout << "Input poemName...\n";
+			std::cin >> poemName;
 
-	}
-	else if (command.compare("poem") == 0)
-	{
+			int numFailed = 0;
 
+			for (auto i : poetry)
+			{
+				if (poemName.compare(i.first) == 0)
+					poemContents = i.second;
+				else
+					numFailed++; 
+			}
+			if (numFailed != 4)
+				fileSystem.readInFile(poemName, poemContents);
+			else
+				std::cout << "Poem does not exsist\n"; 
+		}
+		else if (command.compare("Read") == 0)
+		{
+			std::cout << "Input file path...\n";
+			std::cin >> newFilePath;
+			//fileSystem.readInFile(newFilePath); 
+			fileSystem.readFile(newFilePath); 
+		}
+		else if (command.compare("poem") == 0)
+		{
+			std::cin >> poemName;
+			for (auto i : poetry)
+			{
+				if (poemName.compare(i.first) == 0)
+					poemContents = i.second;
+			}
+
+		}
+		else if (command.compare("test") == 0)
+		{
+			fileSystem.readFile("what");
+		}
+
+		std::cout << "Input command...\n"; 
+		std::cin >> command; 
 	}
 }

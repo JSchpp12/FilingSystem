@@ -45,16 +45,71 @@ void fileSys::listFileNames()
 	//block temp;
 }
 
-//used for testing, write a short int into the file allocation table 
-void fileSys::writeShort(short int newInt)
+//read the file in the file system out to console
+void fileSys::readFile(std::string targetFile)
 {
+	/*
+	std::string junk1 = "wow";
+	char junk2[]
+	{
+		'w', 'o', 'w', 0
+	};
+	bool test = compStringChar(junk1, junk2); 
+	if (strcmp(junk1.c_str(), junk2) == 0)
+		std::cout << "Test Passed\n";
+	*/ 
+	
+	directoryEntry* scanner = nullptr; 
+	short int targetBlock;
 
+	//get first block of file from directory
+	short int firstBlock; 
+	
+	if (firstEntryExsist)
+	{
+		scanner = &firstEntry;
+		do
+		{
+			if (compStringChar(targetFile, scanner->fileName_storage))
+			{
+				firstBlock = scanner->firstblockNum;
+				break;
+			}
+			scanner = scanner->nextEntry;
+		} while (scanner->nextEntry != nullptr);
+	}
+
+	if (scanner != nullptr)
+	{
+		targetBlock = scanner->firstblockNum; 
+		while (targetBlock != -1)
+		{
+			//read the data from the target block
+			for (int i = 0; i < 4000; i++)
+			{
+				std::cout << Drive->data[targetBlock].block_storage[i];
+			}
+			//get next block from FAT
+			targetBlock = allTable->tableInfo[targetBlock]; 
+		}
+	}
+	else
+	{
+		std::cout << "Specified file does not exsist\n";
+		return; 
+	}
 }
 
-void fileSys::readInFile(std::string newFilePath)
+void fileSys::readInFile(std::string newFileName, std::string poemContents)
 {
 	bool success; 
-	success = insertFile(newFilePath); 
+	//success = insertFile(newFilePath); 
+	success = insertFile(newFileName, poemContents); 
+
+	if (success == false)
+	{
+		std::cout << "Write Failed\n"; 
+	}
 }
 #pragma endregion
 
@@ -76,10 +131,23 @@ void fileSys::initilizeEmptyDisk()
 	{
 		allTable->tableInfo[i] = -9; //set vals in allocationTable to 'empty' 
 	}
+
+	//buildDirectoryTable(); 
+
+	/*
 	//create empty directory 
 	directoryEntry newDirectory; 
 	firstEntry = &newDirectory;
 	lastEntry = &newDirectory;
+	*/ 
+}
+
+//build the directory table, called if one does not exsist
+void fileSys::buildDirectoryTable()
+{
+	//FAT has to begin in the 3rd block of data 
+	allTable->tableInfo[2] = -1; 
+	directoryTableFirst = 2; 
 }
 
 //read in disk from file into memory structures 
@@ -94,7 +162,7 @@ bool fileSys::initilizeDiskFromStorage(std::string fileName)
 	for (int j = 0; j < 4096; j++)
 	{
 		//read in the allocation table first 
-		/*
+		
 		char currentByte = readCharFromFile();
 		if (fileIO.eof() == true)
 		{
@@ -104,7 +172,7 @@ bool fileSys::initilizeDiskFromStorage(std::string fileName)
 		}
 		//store char into storage
 		buildBlocks(currentByte); 
-		*/ 
+		
 		short int allInfo; 
 		fileIO >> allInfo; 
 
@@ -162,70 +230,93 @@ void fileSys::buildBlocks(char newBlockPiece)
 	if (blockStorageCount > 4000)
 	{
 		dataCount++; 
-		std::cout << "block full, new block \n"; 
+		//std::cout << "block full, new block \n"; 
 	}
 }
 
-//called to insert a file into the file system
-bool fileSys::insertFile(std::string newFilePath)
+//build file from map and insert it into the fileSystem
+bool fileSys::insertFile(std::string fileName, std::string poemContents)
 {
-	int file_size, free_space, firstBlock; 
-	short int targetBlock, previousBlock; 
-	int num_blocksNeed = 0;
-	std::ifstream newFileReader;
-	newFileReader.open(newFilePath, std::ios::ate | std::ios::binary);
+	int file_size, free_space; 
+	int poemContentsCount = 0; 
+	short int firstBlock, targetBlock, previousBlock; 
+	int num_blocksNeeded = 0; 
+	bool directoryEntryExsist = false; 
 
-	//check if file is open
-	if (newFileReader.is_open() == false)
-	{
-		std::cout << "Filed to open the file\n";
-		return false; //failed to open file 
+	//check if the poemName is already in the system 
+	directoryEntry* scanner = nullptr; 
+	int scannerTracker = 0; 
+
+	if (firstEntryExsist)
+	{	
+		scanner = &firstEntry; 
+		while (scanner->nextEntry != nullptr)
+		{
+			 //compare looking for the correct filename
+			if (compStringChar(fileName, scanner->fileName_storage))
+			{
+				directoryEntryExsist = true; 
+				std::cout << "File already exsists, overwriting...\n"; 
+				break; 
+			}
+			scanner = scanner->nextEntry; 
+			scannerTracker++; 
+		} 
+		directoryEntryExsist = false; 
 	}
+	else
+	{
+		directoryEntryExsist = false;
+		allTable->tableInfo[2] = -1; 
+		//directory table has not been built yet
+	}
+		
+	//if file exsists, overwright else make new 
+	if (directoryEntryExsist)
+		targetBlock = scanner->firstblockNum; 
+	else
+		targetBlock = findEmptyBlock(); 
 
-	//check if there is room for the file 
-	file_size = newFileReader.tellg(); //number of bytes in file 
-	num_blocksNeed = (file_size / 4000);
+	//check if there is room in the system for the new information 
+
+	file_size = sizeof(poemContents);
+
+	num_blocksNeeded = (file_size / 4000);
 	if ((file_size % 4000) > 0)
-		num_blocksNeed++;
+		num_blocksNeeded++;
 
-	std::cout << "Number of blocks needed " << num_blocksNeed << "\n";
-	newFileReader.seekg(0, std::ios::beg); //move file reader back to beginning of file 
-
-	//build new directory entry for the file 
-	targetBlock = findEmptyBlock();
-	buildDirectoryEntry(newFilePath, file_size, targetBlock); 
+	//targetBlock = findEmptyBlock();
 
 	//read in the blocks that are needed 
-	for (int i = 0; i < num_blocksNeed; i++)
+	for (int i = 0; i < num_blocksNeeded; i++)	
 	{
-		targetBlock = findEmptyBlock();
-		block* newBlock = new block;
-
+		//block will be set for start, else need a new block
+		/*
 		if (i == 0)
-			firstBlock = targetBlock;
-		else
-		{
-			//update file allocation table 
-			allTable->tableInfo[previousBlock] = targetBlock; 
-		}
+			if (!directoryEntryExsist)
+				targetBlock = findEmptyBlock();
+			else
+				//directory exsists need to follow path 
+				targetBlock = allTable->tableInfo[previousBlock]; 
+		*/ 
 
-		//read the file into the new block structure 
+		//update FAT table as needed
+		if (i != 0)
+			allTable->tableInfo[previousBlock] = targetBlock;
+		else
+			//just set initilly as eof, will update if more blocks are needed
+			allTable->tableInfo[targetBlock] = -1; 
+
+		//start copying data into the blocks
 		for (int k = 0; k < 4000; k++)
 		{
-			char* tempStorage = new char;
-			newFileReader >> tempStorage;
-
-			//check if hit end of file 
-			if (newFileReader.eof() == true)
-				break;
-			newFileReader >> Drive->data[targetBlock].block_storage[k];
-
-
+			//std::strcpy(&Drive->data[targetBlock].block_storage[k], &poemContents[poemContentsCount]); 
+			Drive->data[targetBlock].block_storage[k] = poemContents[poemContentsCount]; 
 		}
-		previousBlock = firstBlock;
+		previousBlock = targetBlock; 
 	}
-	//insert directory entry
-	//start inserting data into blocks and update file allocation table as needed 
+	buildDirectoryEntry(fileName, file_size, targetBlock);
+	return true; 
 }
 
 //builds a directory entry for the new file being inserted 
@@ -250,10 +341,11 @@ void fileSys::buildDirectoryEntry(std::string newFileName, int fileSize, int sta
 	newEntry.firstblockNum = startingBlock;
 
 	//add new block to the chain
-	if (firstEntry == nullptr)
+	if (!firstEntryExsist)
 	{
-		firstEntry = &newEntry;
+		firstEntry = newEntry;
 		lastEntry = &newEntry;
+		firstEntryExsist = true; 
 	}
 	else
 	{
@@ -262,7 +354,7 @@ void fileSys::buildDirectoryEntry(std::string newFileName, int fileSize, int sta
 	}
 
 	//check how much space the chain will take up and see if a new block is needed 
-	directoryEntry* entryScanner = firstEntry;
+	directoryEntry* entryScanner = &firstEntry;
 	int numEntries = 1;
 	while (entryScanner->nextEntry != nullptr)
 	{
@@ -296,12 +388,20 @@ void fileSys::buildDirectoryEntry(std::string newFileName, int fileSize, int sta
 //returns index of empty block based on file allocation table data 
 short int fileSys::findEmptyBlock()
 {
+	short int returningNum; 
 	for (int i = 0; i < 4096; i++)
 	{
 		if (allTable->tableInfo[i] == -9)
+		{
 			//this block is empty 
-			return i; 
+			returningNum = i;
+			break; 
+		}
 	}
+
+	//update FAT to indicate block is taken now
+	allTable->tableInfo[returningNum] = -1; 
+	return returningNum; 
 }
 
 //returns number of free blocks based on file allocation table data
@@ -331,16 +431,19 @@ char fileSys::readCharFromFile()
 //write virtual disk to file 
 void fileSys::writeToFile()
 {
+	/*
 	if (fileIO.is_open() == false)
 	{
 		fileIO.open(diskPath, std::ios::out | std::ios::binary); 
 	}
 	fileIO.seekp(std::ios::beg);
+	*/ 
 
 	//write the file allocation table
 	for (int i = 0; i < 4096; i++)
 	{
-		fileIO << allTable->tableInfo[i]; 
+		//fileIO << allTable->tableInfo[i]; 
+
 	}
 
 	for (int j = 0; j < numBlocksDirectory; j++) //go through each block 
@@ -352,5 +455,29 @@ void fileSys::writeToFile()
 			fileIO << currentBlock->block_storage[k]; 
 		}
 	}
+}
+
+//returns true if the string and character[] are the same
+bool fileSys::compStringChar(std::string string, char character[])
+{
+	int lengthOfString = string.length(); 
+	char tempHolder; 
+	int numSame = 0; 
+
+	for (int i = 0; i < lengthOfString; i++)
+	{
+		std::cout << character[i]; 
+		tempHolder = string.at(i); 
+		std::cout << tempHolder; 
+		if (tempHolder == character[i])
+			numSame++; 
+		else
+			break; 
+	}
+
+	if (numSame == lengthOfString)
+		return true;
+	else
+		return false; 
 }
 #pragma endregion
