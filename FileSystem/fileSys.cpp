@@ -87,7 +87,11 @@ void fileSys::readFile(std::string targetFile)
 			//read the data from the target block
 			for (int i = 0; i < 4000; i++)
 			{
-				std::cout << Drive->data[targetBlock].block_storage[i];
+				char tempContainer = Drive->data[targetBlock].block_storage[i];
+				if (tempContainer != -51)
+					std::cout << tempContainer;
+				else
+					break; 
 			}
 			//get next block from FAT
 			targetBlock = allTable->tableInfo[targetBlock]; 
@@ -307,11 +311,20 @@ bool fileSys::insertFile(std::string fileName, std::string poemContents)
 			//just set initilly as eof, will update if more blocks are needed
 			allTable->tableInfo[targetBlock] = -1; 
 
+		int poemLength = poemContents.length(); 
+
 		//start copying data into the blocks
 		for (int k = 0; k < 4000; k++)
 		{
-			//std::strcpy(&Drive->data[targetBlock].block_storage[k], &poemContents[poemContentsCount]); 
-			Drive->data[targetBlock].block_storage[k] = poemContents[poemContentsCount]; 
+			//std::strcpy(&Drive->data[targetBlock].block_storage[k], &poemContents[poemContentsCount]);
+			if (poemContentsCount != poemLength)
+			{
+				Drive->data[targetBlock].block_storage[k] = poemContents[poemContentsCount];
+				poemContentsCount++;
+				//poemContentsCount++; 
+			}
+			else
+				break;
 		}
 		previousBlock = targetBlock; 
 	}
@@ -431,18 +444,20 @@ char fileSys::readCharFromFile()
 //write virtual disk to file 
 void fileSys::writeToFile()
 {
-	/*
 	if (fileIO.is_open() == false)
 	{
 		fileIO.open(diskPath, std::ios::out | std::ios::binary); 
 	}
 	fileIO.seekp(std::ios::beg);
-	*/ 
 
 	//write the file allocation table
 	for (int i = 0; i < 4096; i++)
 	{
-		//fileIO << allTable->tableInfo[i]; 
+		fileIO << allTable->tableInfo[i]; 
+	}
+
+	for (int k = 0; k < numBlocksDirectory; k++)
+	{
 
 	}
 
